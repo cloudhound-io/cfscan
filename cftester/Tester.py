@@ -38,9 +38,9 @@ class Tester(object):
         fd.write(_format % args)
 
     def run_tests(self):
-        self.format(self.stdout, 'report for target %s:\n', self.target)
+        self.format(self.stdout, 'Generating report for target %s:\n\n', self.target)
         for test_func in self.__get_tests():
-            self.format(self.stdout, "\t%s:\n", test_func.__doc__.strip())
+            self.format(self.stdout, "\tTest: %s\n", test_func.__doc__.strip())
             try:
                 for passed, msg in test_func(self):
                     if not passed:
