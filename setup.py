@@ -9,7 +9,7 @@ setup(
     license = "BSD",
     keywords = "cf cloud foundry cloudfoundry security health scanner tester vulnerability",
     url = "https://github.com/cloudhound-io/cfscan",
-    packages=['lib'],
+    packages=['cfscan'],
     install_requires=['requests'],
     scripts=['bin/cfscan'],
     classifiers=[
