@@ -18,7 +18,7 @@ class bcolors(set):
 
 if __name__ == "__main__":
 
-    if len(sys.argv) != 2:
+    if len(sys.argv) != 2 or sys.argv[-1] == '-h' or sys.argv[-1] == '--help':
         basename = os.path.basename(sys.argv[0])
         sys.stderr.write("syntax: %s <cf_api_target>\nusage example: cfscan http://api.local.pcfdev.io\n" % basename)
         exit(1)
