@@ -1,17 +1,17 @@
 from setuptools import setup
 
 setup(
-    name = "cftest",
-    version = "0.0.5",
+    name = "cfscan",
+    version = "0.0.1",
     author = "cloudhound.io",
     author_email = "info@cloudhound.io",
-    description = ("an open source security, best-practices and vulnerability scanner for Cloud Foundry"),
+    description = ("an open source vulnerability scanner for cloud foundry"),
     license = "BSD",
-    keywords = "cf security health best vulnerability scanner cloudfoundry practice test tester cloud foundry",
-    url = "https://github.com/cloudhound-io/cftest",
-    packages=['cftester'],
+    keywords = "cf cloud foundry cloudfoundry security health scanner tester vulnerability",
+    url = "https://github.com/cloudhound-io/cfscan",
+    packages=['lib'],
     install_requires=['requests'],
-    scripts=['bin/cftest'],
+    scripts=['bin/cfscan'],
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Topic :: Utilities",
