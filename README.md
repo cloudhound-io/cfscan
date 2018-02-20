@@ -1,5 +1,5 @@
 # cfscan
-cfscan is an open-source vulnerability scanner for Cloud Foundry, maintained by the good folks at cloudhound.io
+cfscan is an open-source vulnerability scanner for Cloud Foundry, maintained by the good people of https://cloudhound.io
 
 
 ## Installation
