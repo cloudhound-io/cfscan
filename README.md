@@ -28,7 +28,7 @@ for test, result in scanner.scan():
 ```
 
 ## Writing tests
-You can also subcall CFScanner to add your own tests. a test is simply an annotated generator method:
+You can also subclass the CFScanner class to add your own tests. a test is quite-simply an annotated generator method:
 
 ```
 import cfscan
