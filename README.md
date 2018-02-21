@@ -5,12 +5,16 @@ cfscan is an open-source vulnerability scanner for Cloud Foundry, maintained by 
 ## Installation
 Installation is as easy as:
 
-`pip install cfscan`
+```
+$ pip install cfscan
+```
 
 ## Usage
 You can use cfscan from the command-line:
 
-`$ cfscan http://api.local.pcfdev.io`
+```
+$ cfscan http://api.local.pcfdev.io
+```
 
 Where `api.local.pcfdev.io` is the API address of the Cloud Foundry instance you wish to scan
 
