@@ -9,6 +9,7 @@ def test(func):
     """
     func.__test__ = True
     func.desc = func.__doc__.strip()
+    func.name = func.__name__
     return func
 
 

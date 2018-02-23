@@ -25,9 +25,9 @@ if __name__ == "__main__":
 
     scanner = CFScanner(sys.argv[1])
 
-    print '[+] Generating report for %s\n' % scanner.target
+    print 'Generating report for %s\n' % scanner.target
     for test, results in scanner.scan():
-        print '\t[+] %s:' % test.desc
+        print '\t%s:' % test.desc
 
         for status, msg in results:
             status_str = '[%s%s%s]' % (bcolors.OKGREEN if status == PASS else bcolors.FAIL,

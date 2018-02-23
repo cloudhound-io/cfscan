@@ -10,18 +10,6 @@ join = urlparse.urljoin
 def parse_version(version_string):
     return map(int, version_string.split('.')[0:2])
 
-
-# disable requests SSL verification:
-original_requests_get = requests.get
-
-
-def insecure_requests_get(*args, **kwargs):
-    kwargs.update({'verify': False})
-    return original_requests_get(*args, **kwargs)
-
-
-requests.get = insecure_requests_get
-
 # disable urllib3 from complaining about SSL verification:
 requests.packages.urllib3.disable_warnings()
 
@@ -30,10 +18,25 @@ class CFScanner(Scanner):
 
     def __init__(self, *args, **kwargs):
         super(CFScanner, self).__init__(*args, **kwargs)
-        self.info = requests.get(join(self.target, '/v2/info')).json()
+        self.info_endpoint = join(self.target, '/v2/info')
+        self.ssl_verify = False
+        self.info = self.get(self.info_endpoint).json()
+        assert self.info, self.info_endpoint + " did not return the expected CF info"
+
+        self.token_endpoint = self.info.get('token_endpoint')
+        self.oauth_token_endpoint = join(self.token_endpoint, '/oauth/token')
+        self.token_keys_endpoint = join(self.token_endpoint, '/token_keys')
+        self.app_ssh_key_fingerprint = self.info.get('app_ssh_key_fingerprint')
+        self.logging_endpoint = self.info.get('logging_endpoint')
+        self.doppler_logging_endpoint = self.info.get('doppler_logging_endpoint')
+        self.authorization_endpoint = self.info.get('authorization_endpoint')
+
+    def get(self, url, params=None, **kwargs):
+        kwargs.update({'verify': self.ssl_verify})
+        return requests.get(url, params, **kwargs)
 
     @test
-    def well_known_uaa_keys(self):
+    def well_known_keys(self):
 
         """ Well-known cryptographic keys """
 
@@ -43,46 +46,34 @@ class CFScanner(Scanner):
             'https://raw.githubusercontent.com/cloudfoundry/cloud_controller_ng/master/config/cloud_controller.yml'
         ]
 
-        manifest_data = '\n'.join(map(lambda x: requests.get(x).text, manifests))
+        manifest_data = '\n'.join(map(lambda x: self.get(x).text, manifests))
 
-        token_endpoint = self.info.get('token_endpoint')
-        if not token_endpoint:
-            self.format(self.stderr, 'cannot extract token_endpoint')
-            yield FAIL, 'cannot extract token_endpoint from info hash'
-            return
+        token_keys = self.get(self.token_keys_endpoint).json()
 
-        token_keys = requests.get(join(token_endpoint, '/token_keys'))
-        if not token_keys.status_code == 200:
-            yield FAIL, 'cannot reach ' + join(token_endpoint, '/token_keys')
-            return
-
-        token_keys = token_keys.json().get('keys')
-
-        for token_key in token_keys:
+        for token_key in token_keys.get('keys'):
             first_line = token_key.get('value').split('\n')[1]
             if first_line in manifest_data:
                 yield FAIL, 'key "%s..." is a default token signing key and should be changed immediately' % first_line
             else:
                 yield PASS, 'key "%s..." is not a default token signing key' % first_line
 
-        app_ssh_key = self.info.get('app_ssh_host_key_fingerprint')
-        if app_ssh_key:
-            if app_ssh_key in manifest_data:
+        if self.app_ssh_key_fingerprint:
+            if self.app_ssh_key_fingerprint in manifest_data:
                 yield FAIL, 'app SSH is using the default SSH host key "%s", should be changed immediately' % app_ssh_key
             else:
                 yield PASS, 'app SSH is using a non-default SSH Host key "%s"' % app_ssh_key
 
 
     @test
-    def uaa_version(self):
+    def platform_uaa_version(self):
 
         """ Platform UAA version """
 
-        latest_version = requests.get(
+        latest_version = self.get(
             "https://raw.githubusercontent.com/cloudfoundry/uaa/master/gradle.properties",
         ).text.split('=')[-1]
 
-        current_version = requests.get(
+        current_version = self.get(
             join(self.info.get('token_endpoint'), '/login'),
             headers={'accept': 'application/json'}
         ).json()
@@ -94,15 +85,13 @@ class CFScanner(Scanner):
             yield FAIL, 'UAA version is %d.%d, latest version is %d.%d' % (major, minor, latest_major, latest_minor)
         else:
             yield PASS, 'UAA is at latest version %s' % latest_version
-            return
-
 
     @test
     def cf_version(self):
 
         """ Cloud Foundry version and known CVEs """
 
-        latest_version = requests.get(
+        latest_version = self.get(
             'https://raw.githubusercontent.com/cloudfoundry/cloud_controller_ng/master/config/version_v2'
         ).text
 
@@ -144,7 +133,7 @@ class CFScanner(Scanner):
 
         """ Well-known credentials """
 
-        uaa_well_knwon_creds = [
+        well_knwon_creds = [
             ('cc_routing', 'cc-routing-secret'),
             ('cloud_controller_username_lookup', 'cloud-controller-username-lookup-secret'),
             ('doppler', 'loggregator-secret'),
@@ -158,26 +147,18 @@ class CFScanner(Scanner):
             ('cc-service-dashboards', 'cc-broker-secret')
         ]
 
-        token_endpoint = self.info.get('token_endpoint')
-        if not token_endpoint:
-            self.format(self.stderr, 'cannot extract token_endpoint')
-            yield FAIL, 'cannot extract token_endpoint from info hash'
-            return
-
-        token_endpoint = join(token_endpoint, '/oauth/token')
-
         fail = False
 
-        for creds in uaa_well_knwon_creds:
+        for creds in well_knwon_creds:
 
-            attempt = requests.get(
-                token_endpoint,
-                params={"grant_type":"client_credentials"},
+            attempt = self.get(
+                self.oauth_token_endpoint,
+                params={"grant_type": "client_credentials"},
                 auth=HTTPBasicAuth(*creds)
             )
 
             if attempt.status_code == 200:
-                yield FAIL, 'UAA is using well-known credential "%s:%s"' % creds
+                yield FAIL, 'UAA is uses well-known credential "%s:%s"' % creds
                 fail = True
 
         if not fail:
@@ -193,13 +174,13 @@ class CFScanner(Scanner):
         fail = False
 
         for creds in cf_internal_api_creds:
-            attempt = requests.get(join(self.target, '/internal/buildpacks'), auth=HTTPBasicAuth(*creds))
+            attempt = self.get(join(self.target, '/internal/buildpacks'), auth=HTTPBasicAuth(*creds))
             if attempt.status_code == 200:
                 fail = True
                 break
 
         if fail:
-            yield FAIL, 'Cloud Controller using well-known credentials "%s:%s" for internal api' % creds
+            yield FAIL, 'Cloud Controller uses well-known credential "%s:%s" for cloud controller internal api' % creds
         else:
             yield PASS, 'Cloud Controller does not use well-known internal api credentials'
 
@@ -209,8 +190,16 @@ class CFScanner(Scanner):
 
         """ Insecure communication protocols """
 
-        http_urls = [ self.target, self.info.get('token_endpoint'), self.info.get('authorization_endpoint') ]
-        ws_urls = [ self.info.get('logging_endpoint'), self.info.get('doppler_logging_endpoint')]
+        http_urls = [
+            self.token_endpoint,
+            self.authorization_endpoint,
+            self.target
+        ]
+
+        ws_urls = [
+            self.logging_endpoint,
+            self.doppler_logging_endpoint
+        ]
 
         for url in http_urls:
 
@@ -221,10 +210,10 @@ class CFScanner(Scanner):
             insecure_url = urlparse.urlunparse(('http', insecure.hostname, '/', None, None, None))
 
             try:
-                attempt = requests.get(insecure_url, allow_redirects=False)
+                attempt = self.get(insecure_url, allow_redirects=False)
                 if attempt.status_code == 200:
                     yield FAIL, 'endpoint "%s" accessible over insecure http://, should only be https://' % insecure.hostname
-                if attempt.status_code >= 300 and attempt.status_code < 400:
+                if 300 <= attempt.status_code < 400:
                     yield FAIL, 'endpoint "%s" accessible over insecure http://, ' \
                                  'but automatically redirects to https://, ' \
                                  'could lead to man-in-the-middle attacks' % insecure.hostname
@@ -241,12 +230,13 @@ class CFScanner(Scanner):
 
 
             try:
-                attempt = requests.get(insecure_url, allow_redirects=False)
+                attempt = self.get(insecure_url, allow_redirects=False)
                 if attempt.status_code == 200 or attempt.status_code == 404:
                     yield FAIL, 'endpoint "%s" accessible over insecure ws://, should only be wss://' % insecure.hostname
-                if attempt.status_code >= 300 and attempt.status_code < 400:
+                if 300 <= attempt.status_code < 400:
                     yield FAIL, 'endpoint "%s" accessible over insecure ws://, ' \
                                  'but automatically redirects to wss://, ' \
                                  'this could lead to man-in-the-middle attacks' % insecure.hostname
             except:
                 yield PASS, 'endpoint "%s" not accessible over ws://' % insecure.hostname
+
