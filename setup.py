@@ -2,12 +2,12 @@ from setuptools import setup
 
 setup(
     name = "cfscan",
-    version = "0.0.2",
-    author = "cloudhound.io",
+    version = "0.0.3",
+    author = "https://cloudhound.io",
     author_email = "info@cloudhound.io",
     description = ("cfscan is an open source vulnerability scanner for cloud foundry"),
     license = "BSD",
-    keywords = "cf cloud foundry cloudfoundry security health scanner tester vulnerability",
+    keywords = "free open-source cf cloud foundry cloudfoundry security health vulnerability scanner",
     url = "https://github.com/cloudhound-io/cfscan",
     packages=['cfscan'],
     install_requires=['requests'],

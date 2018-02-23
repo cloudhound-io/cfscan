@@ -2,6 +2,7 @@
 
 import sys
 import os
+import argparse
 from cfscan import CFScanner, PASS, FAIL
 
 
@@ -16,14 +17,31 @@ class bcolors(set):
     UNDERLINE = '\033[4m'
 
 
+def parse_args():
+    argparser = argparse.ArgumentParser(
+        prog=os.path.basename(sys.argv[0]),
+        description='cfscan open-source cloud foundry vulnerability scanner maintained by the good people of https://cloudhound.io'
+    )
+
+    argparser.add_argument(
+        'target',
+        help='target cloud foundry API endpoint to scan, ex: http://api.local.pcfdev.io',
+    )
+
+    argparser.add_argument(
+        '--skip-ssl-validation',
+        action='store_true',
+        help='skip ssl certificate verification, not recommended',
+        dest='skip_ssl_validation'
+    )
+
+    return argparser.parse_args()
+
+
 if __name__ == "__main__":
 
-    if len(sys.argv) != 2 or sys.argv[-1] == '-h' or sys.argv[-1] == '--help':
-        basename = os.path.basename(sys.argv[0])
-        sys.stderr.write("syntax: %s <cf_api_target>\nusage example: cfscan http://api.local.pcfdev.io\n" % basename)
-        exit(1)
-
-    scanner = CFScanner(sys.argv[1])
+    args = parse_args()
+    scanner = CFScanner(args.target, args.skip_ssl_validation)
 
     print 'Generating report for %s\n' % scanner.target
     for test, results in scanner.scan():

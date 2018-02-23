@@ -16,10 +16,10 @@ requests.packages.urllib3.disable_warnings()
 
 class CFScanner(Scanner):
 
-    def __init__(self, *args, **kwargs):
-        super(CFScanner, self).__init__(*args, **kwargs)
+    def __init__(self, target, skip_ssl_verify=False):
+        super(CFScanner, self).__init__(target)
         self.info_endpoint = join(self.target, '/v2/info')
-        self.ssl_verify = False
+        self.ssl_verify = not skip_ssl_verify
         self.info = self.get(self.info_endpoint).json()
         assert self.info, self.info_endpoint + " did not return the expected CF info"
 
@@ -124,9 +124,6 @@ class CFScanner(Scanner):
                 yield FAIL, 'uaa vulnerable to CVE-2017-4974, which allows for sensitive data access'
             if minor <= 52:
                 yield FAIL, 'uaa vulnerable to CVE-2017-4963, which allow for account takeover if using external authentication (LDAP\SAML\etc.)'
-
-
-
 
     @test
     def well_known_credentials(self):
