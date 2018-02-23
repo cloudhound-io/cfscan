@@ -25,7 +25,7 @@ def parse_args():
 
     argparser.add_argument(
         'target',
-        help='target cloud foundry API endpoint to scan, ex: http://api.local.pcfdev.io',
+        help='target cloud foundry API endpoint to scan, example: http://api.local.pcfdev.io',
     )
 
     argparser.add_argument(

@@ -155,7 +155,7 @@ class CFScanner(Scanner):
             )
 
             if attempt.status_code == 200:
-                yield FAIL, 'UAA is uses well-known credential "%s:%s"' % creds
+                yield FAIL, 'UAA uses well-known credential "%s:%s"' % creds
                 fail = True
 
         if not fail:
