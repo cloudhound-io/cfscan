@@ -3,12 +3,17 @@ from requests.auth import HTTPBasicAuth
 import urlparse
 from .scanner import Scanner, test, PASS, FAIL
 
+
 # set up some utilities:
-join = urlparse.urljoin
+def join(url, *comps):
+    for comp in comps:
+        url = urlparse.urljoin(url, comp)
+    return url
 
 
 def parse_version(version_string):
     return map(int, version_string.split('.')[0:2])
+
 
 # disable urllib3 from complaining about SSL verification:
 requests.packages.urllib3.disable_warnings()
@@ -17,13 +22,19 @@ requests.packages.urllib3.disable_warnings()
 class CFScanner(Scanner):
 
     def __init__(self, target, skip_ssl_verify=False):
-        super(CFScanner, self).__init__(target)
+        super(CFScanner, self).__init__()
+
+        if not target.startswith('http'):
+            target = 'http://' + target
+
+        self.target = target
         self.info_endpoint = join(self.target, '/v2/info')
         self.ssl_verify = not skip_ssl_verify
         self.info = self.get(self.info_endpoint).json()
         assert self.info, self.info_endpoint + " did not return the expected CF info"
 
         self.token_endpoint = self.info.get('token_endpoint')
+        self.login_endpoint = join(self.token_endpoint, '/login')
         self.oauth_token_endpoint = join(self.token_endpoint, '/oauth/token')
         self.token_keys_endpoint = join(self.token_endpoint, '/token_keys')
         self.app_ssh_key_fingerprint = self.info.get('app_ssh_key_fingerprint')
@@ -74,8 +85,8 @@ class CFScanner(Scanner):
         ).text.split('=')[-1]
 
         current_version = self.get(
-            join(self.info.get('token_endpoint'), '/login'),
-            headers={'accept': 'application/json'}
+            self.login_endpoint,
+            headers={'accept': 'application/json'},
         ).json()
 
         latest_major, latest_minor = parse_version(latest_version)

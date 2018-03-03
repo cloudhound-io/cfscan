@@ -15,11 +15,6 @@ def test(func):
 
 class Scanner(object):
 
-    def __init__(self, target):
-        if not target.startswith('http'):
-            target = 'http://' + target
-        self.target = target
-
     def get_tests(self):
         return [o for o in self.__class__.__dict__.itervalues() if (callable(o) and hasattr(o, '__test__'))]
 
