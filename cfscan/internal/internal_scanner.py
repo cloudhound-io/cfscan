@@ -18,6 +18,8 @@ NUMBER_OF_HOSTS = 65535
 PASS = True
 FAIL = False
 
+CRLF = '\r\n'
+
 
 def test(func):
     """
@@ -152,7 +154,7 @@ class InternalScanner(Scanner):
                 sock = socket.socket()
                 sock.connect(host)
                 sock.recv(65535) # we don't care about the info message anymore
-                sock.send('CONNECT ' + json.dumps({'user': user, 'password': password}))
+                sock.send('CONNECT ' + json.dumps({'user': user, 'password': password}) + CRLF)
                 with sock.makefile() as sock_file:
                     if '+OK' in sock_file.readline():
                         fail = True
