@@ -35,6 +35,26 @@ def parse_args():
         dest='skip_ssl_validation'
     )
 
+    argparser.add_argument(
+        '--user',
+        help='username for internal cloud foundry scanning'
+    )
+
+    argparser.add_argument(
+        '--password',
+        help='password for internal cloud foundry scanning'
+    )
+
+    argparser.add_argument(
+        '--org',
+        help='org to deploy internal scanner app'
+    )
+
+    argparser.add_argument(
+        '--space',
+        help='space to deploy internal scanner app'
+    )
+
     return argparser.parse_args()
 
 
