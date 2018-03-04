@@ -95,7 +95,6 @@ class InternalScanner(Scanner):
 
         self.discovering = False
 
-
     def well_known_go_router_credentials(self):
 
         well_known_creds = [
@@ -122,7 +121,6 @@ class InternalScanner(Scanner):
             if not fail:
                 yield PASS, 'gorouter host %s does not use well-known status credentials'
 
-
     def well_known_nats_credentials(self):
 
         well_known_creds = [
@@ -141,15 +139,12 @@ class InternalScanner(Scanner):
             sock_file = sock.makefile('rb')
             info = sock_file.readline()
             sock_file.close()
+            sock.close()
             info = json.loads(info[5:]) # structure of NATS info message is "INFO {/JSON/}"
             if not info.get('auth_required', False):
                 fail = True
                 yield FAIL, 'nats host %s does not require authentication' % host[0]
-                sock.close()
                 continue
-
-            # this might seem odd, but we have to do this because NATS closes the connection on each failed attempt:
-            sock.close()
 
             for user, password in well_known_creds:
                 sock = socket.socket()
@@ -159,6 +154,7 @@ class InternalScanner(Scanner):
                 sock_file = sock.makefile('rb')
                 response = sock_file.readline()
                 sock_file.close()
+                sock.close()
                 if '+OK' in response:
                     fail = True
                     yield FAIL, 'nats host %s uses well-known credential "%s:%s"' % (host, user, password)
@@ -255,7 +251,7 @@ class InternalScannerApplication(BaseHTTPServer.BaseHTTPRequestHandler):
 
         elif self.path == '/scan':
             if scanner.discovering:
-                status = json.dumps({"error": "disdovery still in progress"})
+                status = json.dumps({"error": "discovery still in progress"})
                 self.send_error(400)
                 self.send_header('content-type', 'application/json')
                 self.send_header('content-length', str(len(status)))
@@ -282,5 +278,6 @@ class InternalScannerApplication(BaseHTTPServer.BaseHTTPRequestHandler):
 
             # send trailer:
             write_chunk('')
+
 
 BaseHTTPServer.HTTPServer(('', int(os.getenv('PORT', '9090'))), InternalScannerApplication).serve_forever()
