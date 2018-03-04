@@ -138,14 +138,15 @@ class InternalScanner(Scanner):
             fail = False
             sock = socket.socket()
             sock.connect(host)
-            with sock.makefile() as sock_file:
-                info = sock_file.readline()
-                info = json.loads(info[5:]) # structure of NATS info message is "INFO {/JSON/}"
-                if not info.get('auth_required', False):
-                    fail = True
-                    yield FAIL, 'nats host %s does not require authentication' % host[0]
-                    sock.close()
-                    continue
+            sock_file = sock.makefile('rb')
+            info = sock_file.readline()
+            sock_file.close()
+            info = json.loads(info[5:]) # structure of NATS info message is "INFO {/JSON/}"
+            if not info.get('auth_required', False):
+                fail = True
+                yield FAIL, 'nats host %s does not require authentication' % host[0]
+                sock.close()
+                continue
 
             # this might seem odd, but we have to do this because NATS closes the connection on each failed attempt:
             sock.close()
@@ -155,15 +156,16 @@ class InternalScanner(Scanner):
                 sock.connect(host)
                 sock.recv(65535) # we don't care about the info message anymore
                 sock.send('CONNECT ' + json.dumps({'user': user, 'password': password}) + CRLF)
-                with sock.makefile() as sock_file:
-                    if '+OK' in sock_file.readline():
-                        fail = True
-                        yield FAIL, 'nats host %s uses well-known credential "%s:%s"' % (host, user, password)
-                        break
+                sock_file = sock.makefile('rb')
+                response = sock_file.readline()
+                sock_file.close()
+                if '+OK' in response:
+                    fail = True
+                    yield FAIL, 'nats host %s uses well-known credential "%s:%s"' % (host, user, password)
+                    break
 
             if not fail:
                 yield PASS, 'nats host %s does not use well-known credentials' % host
-
 
     @test
     def well_known_credentials(self):
@@ -176,9 +178,7 @@ class InternalScanner(Scanner):
         for status, msg in self.well_known_go_router_credentials():
             yield status, msg
 
-
-    def anonymous_access_to(self, component, scheme='https', path='/', method='GET', response_code=200):
-
+    def anonymous_access_to(self, component, scheme='http', path='/', method='GET', response_code=200):
         if len(self.components.get(component, [])) == 0:
             yield PASS, 'no %s hosts accessible / discoverable from application network' % component
             return
@@ -223,6 +223,9 @@ class InternalScanner(Scanner):
             yield status, msg
 
         for status, msg in self.anonymous_access_to('TPS', path='/v1/bulk_actual_lrp_status', response_code=200):
+            yield status, msg
+
+        for status, msg in self.anonymous_access_to('ETCD', path='/v2/keys'):
             yield status, msg
 
 
