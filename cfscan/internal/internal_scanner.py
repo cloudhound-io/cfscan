@@ -12,7 +12,7 @@ import uuid
 
 DEFAULT_INSTANCE_IP = '10.0.0.0'
 DEFAULT_SUBNET_MASK = '255.255.0.0'
-NUMBER_OF_HOSTS = 65535
+NUMBER_OF_HOSTS = 65534
 
 # redefine scanner.py, because we don't want any external dependencies here:
 PASS = True
