@@ -75,7 +75,7 @@ class InternalScanner(Scanner):
 
         well_known_ports = [
             ('ETCD',        4001),
-            ('ETCD-SERVER', 7001),
+            ('ETCD-CLUSTER', 7001),
             ('NATS',        4222),
             ('MYSQL',       3306),
             ('GOROUTER',    8087),
@@ -237,7 +237,7 @@ class InternalScanner(Scanner):
         for status, msg in self.anonymous_access_to('ETCD', path='/v2/keys'):
             yield status, msg
             
-        for status, msg in self.anonymous_access_to('ETCD-SERVER', path='/v2/members'):
+        for status, msg in self.anonymous_access_to('ETCD-CLUSTER', path='/v2/members'):
             yield status, msg
 
 
