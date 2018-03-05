@@ -115,6 +115,7 @@ class InternalScanner(Scanner):
                     if res.code == 200:
                         fail = True
                         yield FAIL, 'gorouter host %s uses well-known status credential "%s:%s"' % (host, user, password)
+                        break
                 except:
                     pass
 
