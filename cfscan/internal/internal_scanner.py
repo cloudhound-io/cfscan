@@ -219,7 +219,7 @@ class InternalScanner(Scanner):
         for status, msg in self.anonymous_access_to('NSYNC', path='/v1/tasks', method='POST', response_code=400):
             yield status, msg
 
-        for status, msg in self.anonymous_access_to('TPS', path='/v1/bulk_actual_lrp_status', response_code=200):
+        for status, msg in self.anonymous_access_to('TPS', path='/v1/bulk_actual_lrp_status'):
             yield status, msg
 
         for status, msg in self.anonymous_access_to('ETCD', path='/v2/keys'):
