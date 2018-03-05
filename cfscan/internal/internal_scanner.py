@@ -204,13 +204,13 @@ class InternalScanner(Scanner):
 
         """ Anonymous access to internal Cloud Foundry components from application network """
 
-        for status, msg in self.anonymous_access_to('REP', path='/ping'):
+        for status, msg in self.anonymous_access_to('REP', path='/state'):
             yield status, msg
 
         for status, msg in self.anonymous_access_to('AUCTIONEER', path='/v1/lrps', method='POST', response_code=400):
             yield status, msg
 
-        for status, msg in self.anonymous_access_to('BBS', path='/v1/events'):
+        for status, msg in self.anonymous_access_to('BBS', path='/v1/ping', method='POST'):
             yield status, msg
 
         for status, msg in self.anonymous_access_to('STAGER', path='/v1/staging/' + str(uuid.uuid4()), response_code=404):
@@ -219,7 +219,7 @@ class InternalScanner(Scanner):
         for status, msg in self.anonymous_access_to('NSYNC', path='/v1/tasks', method='POST', response_code=400):
             yield status, msg
 
-        for status, msg in self.anonymous_access_to('TPS', path='/v1/bulk_actual_lrp_status'):
+        for status, msg in self.anonymous_access_to('TPS', path='/v1/bulk_actual_lrp_status', response_code=400):
             yield status, msg
 
         for status, msg in self.anonymous_access_to('ETCD', path='/v2/keys'):
