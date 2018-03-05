@@ -10,9 +10,9 @@ import ssl
 import uuid
 
 
-DEFAULT_INSTANCE_IP = '10.0.0.0'
-DEFAULT_SUBNET_MASK = '255.255.0.0'
-NUMBER_OF_HOSTS = 65534
+DEFAULT_INSTANCE_IP =   '10.0.0.0'
+DEFAULT_SUBNET_MASK =   '255.255.0.0'
+NUMBER_OF_HOSTS     =   65534
 
 # redefine scanner.py, because we don't want any external dependencies here:
 PASS = True
@@ -74,7 +74,19 @@ class InternalScanner(Scanner):
               unpack_inet4(socket.inet_aton(DEFAULT_SUBNET_MASK))
 
         well_known_ports = [
-            # TODO: fill in ('NAME', port)
+            ('ETCD',        4001),
+            ('ETCD-SERVER', 7001),
+            ('NATS',        4222),
+            ('MYSQL',       3306),
+            ('GOROUTER',    8087),
+            ('REP',         1801),
+            ('AUCTIONEER',  9016),
+            ('STAGER',      8890),
+            ('BBS',         8889),
+            ('NSYNC',       8787),
+            ('TPS',         1518),
+            ('CC-UPLOADER', 9090),
+            ('DOPPLER',     8082)
         ]
 
         for i in xrange(1, NUMBER_OF_HOSTS):
