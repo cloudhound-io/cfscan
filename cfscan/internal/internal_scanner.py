@@ -109,7 +109,7 @@ class InternalScanner(Scanner):
             fail = False
             for user, password in well_known_creds:
                 req = urllib2.Request('http://%s:%d/varz' % (host, port))
-                req.add_header('Authentication', 'Basic ' + base64.b64encode('%s:%s' % (user, password)))
+                req.add_header('Authorization', 'Basic ' + base64.b64encode('%s:%s' % (user, password)))
                 try:
                     res = urllib2.urlopen(req)
                     if res.code == 200:
