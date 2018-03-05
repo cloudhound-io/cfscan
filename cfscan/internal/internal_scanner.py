@@ -102,7 +102,7 @@ class InternalScanner(Scanner):
         ]
 
         if len(self.components.get('GOROUTER', [])) == 0:
-            yield PASS, 'gorouter hosts not accessible / discoverable from application network'
+            yield PASS, 'gorouter status not accessible / discoverable from application network'
             return
 
         for host, port in self.components.get('GOROUTER', []):
