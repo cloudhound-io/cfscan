@@ -224,6 +224,9 @@ class InternalScanner(Scanner):
 
         for status, msg in self.anonymous_access_to('ETCD', path='/v2/keys'):
             yield status, msg
+            
+        for status, msg in self.anonymous_access_to('ETCD-R', path='/v2/version'):
+            yield status, msg
 
 
 __internal_scanner_instance = None
