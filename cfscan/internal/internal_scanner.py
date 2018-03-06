@@ -294,6 +294,17 @@ class InternalScannerApplication(BaseHTTPServer.BaseHTTPRequestHandler):
 
             # send trailer:
             write_chunk('')
+        
+        else:
+            
+            status = json.dumps({'error': 'not found %s' % self.path})
+            self.send_response(404)
+            self.send_header('content-type', 'application/json')
+            self.send_header('content-length', str(len(status)))
+            self.end_headers()
+            
+            self.wfile.write(status)
+                         
 
 
 BaseHTTPServer.HTTPServer(('', int(os.getenv('PORT', '9090'))), InternalScannerApplication).serve_forever()
