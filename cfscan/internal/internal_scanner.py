@@ -13,8 +13,8 @@ from multiprocessing import Pool, Lock
 
 DEFAULT_INSTANCE_IP             = '10.0.0.0'
 DEFAULT_SUBNET_MASK             = '255.255.0.0'
-NUMBER_OF_HOSTS                 = 2 ** 16
-NUMBER_OF_PROCS                 = 2 ** 6
+NUMBER_OF_HOSTS                 = 1 << 16
+NUMBER_OF_PROCS                 = 1 << 6
 NUMBER_OF_HOSTS_PER_PROC        = NUMBER_OF_HOSTS / NUMBER_OF_PROCS
 
 
