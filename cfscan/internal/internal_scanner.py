@@ -8,11 +8,15 @@ import urllib2
 import base64
 import ssl
 import uuid
+from multiprocessing import Pool, Lock
 
 
-DEFAULT_INSTANCE_IP =   '10.0.0.0'
-DEFAULT_SUBNET_MASK =   '255.255.0.0'
-NUMBER_OF_HOSTS     =   65534
+DEFAULT_INSTANCE_IP             = '10.0.0.0'
+DEFAULT_SUBNET_MASK             = '255.255.0.0'
+NUMBER_OF_HOSTS                 = 2 ** 16
+NUMBER_OF_PROCS                 = 2 ** 6
+NUMBER_OF_HOSTS_PER_PROC        = NUMBER_OF_HOSTS / NUMBER_OF_PROCS
+
 
 # redefine scanner.py, because we don't want any external dependencies here:
 PASS = True
@@ -62,16 +66,13 @@ class InternalScanner(Scanner):
         super(InternalScanner, self).__init__()
         self.components = {}
         self.discovery_whole = NUMBER_OF_HOSTS
-        self.discovery_part = 1
+        self.discovery_part = 0
         self.discovering = False
         thread.start_new(self.discover, ())
 
-    def discover(self):
-
-        self.discovering = True
-
-        net = unpack_inet4(socket.inet_aton(os.getenv('CF_INSTANCE_IP', DEFAULT_INSTANCE_IP))) & \
-              unpack_inet4(socket.inet_aton(DEFAULT_SUBNET_MASK))
+    def do_discover(self, net_and_lock):
+        net = net_and_lock[0]
+        lock = net_and_lock[1]
 
         well_known_ports = [
             ('ETCD',        4001),
@@ -89,22 +90,45 @@ class InternalScanner(Scanner):
             ('DOPPLER',     8082)
         ]
 
-        for i in xrange(1, NUMBER_OF_HOSTS):
+        for i in xrange(NUMBER_OF_HOSTS_PER_PROC):
             host = socket.inet_ntoa(pack_inet4(net + i))
-            self.discovery_part = i
+            self.discovery_part += 1
             for name, port in well_known_ports:
                 sock = socket.socket()
                 sock.settimeout(0.15)
                 try:
                     sock.connect((host, port))
+
+                    ''' Critical Section Beginning '''
+                    lock.acquire()
                     component_list = self.components.get(name, [])
                     component_list.append((host, port))
                     self.components.update({name: component_list})
+                    lock.release()
+                    ''' Critical Section End '''
                 except:
                     pass
                 finally:
                     sock.close()
 
+    def discover(self):
+        nets_and_lock = []
+
+        ''' Extract general Class-B network '''
+        net = unpack_inet4(socket.inet_aton(os.getenv('CF_INSTANCE_IP', DEFAULT_INSTANCE_IP))) & \
+              unpack_inet4(socket.inet_aton(DEFAULT_SUBNET_MASK))
+
+        lock = Lock()
+        ''' Divide target network into chunks '''
+        for i in range(NUMBER_OF_PROCS):
+            nets_and_lock.append((net, lock))
+            net += NUMBER_OF_HOSTS_PER_PROC
+
+        self.discovering = True
+        tasks = Pool(NUMBER_OF_PROCS)
+
+        tasks.map(self.do_discover, nets_and_lock)
+        tasks.join()    # Wait for all tasks to complete
         self.discovering = False
 
     def well_known_go_router_credentials(self):
