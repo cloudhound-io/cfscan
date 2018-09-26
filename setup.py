@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name = "cfscan",
-    version = "0.0.3",
+    version = "0.0.4",
     author = "https://cloudhound.io",
     author_email = "info@cloudhound.io",
     description = ("cfscan is an open source vulnerability scanner for cloud foundry"),

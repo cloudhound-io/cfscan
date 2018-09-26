@@ -82,7 +82,7 @@ class CFScanner(Scanner):
 
         latest_version = self.get(
             "https://raw.githubusercontent.com/cloudfoundry/uaa/master/gradle.properties",
-        ).text.split('=')[-1]
+        ).text.splitlines(False)[0].split('=')[-1]
 
         current_version = self.get(
             self.login_endpoint,
